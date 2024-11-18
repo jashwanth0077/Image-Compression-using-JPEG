@@ -14,12 +14,13 @@ def compress_image(image, quantization_matrix):
     values = [value for _, _, value in all_rle]
     huffman = HuffmanCoding()
     codes = huffman.encode(values)
-
+    print(f'Hello {codes[1]}')
     encoded_blocks = []
     for block in dct_blocks:
         quantized_block = quantize_block(block, quantization_matrix)
         rle = run_length_encode(quantized_block)
-        encoded_blocks.append(huffman_encode_rle_with_global_codes(rle, huffman))
+        encoded_blocks.append(huffman_encode_rle_with_global_codes(rle, codes))
+        print(huffman_encode_rle_with_global_codes(rle, codes))
 
     return encoded_blocks, huffman, image.shape
 
@@ -34,5 +35,6 @@ def decompress_image(encoded_blocks, huffman, quantization_matrix, image_shape):
         quantized_block = zigzag_to_block(rle)
         dequantized_block = dequantize_block(quantized_block, quantization_matrix)
         restored_image[row*block_size:(row+1)*block_size, col*block_size:(col+1)*block_size] = idct2(dequantized_block)
+        print(idct2(dequantized_block))
 
     return np.clip(restored_image, 0, 255).astype(np.uint8)

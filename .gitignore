@@ -1,0 +1,9 @@
+# Exclude log files
+*.log
+
+# Exclude temp files
+*.tmp
+
+# Exclude specific folders
+node_modules/
+__pycache__/

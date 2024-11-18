@@ -1,3 +1,5 @@
+import numpy as np
+
 quantization_matrices = {
     "Standard_Luminance": np.array([
         [16, 11, 10, 16, 24, 40, 51, 61],
