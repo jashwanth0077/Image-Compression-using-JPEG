@@ -5,18 +5,25 @@ import heapq
 
 def run_length_encode(block):
     """Run-length encoding of an 8x8 block (zigzag scan assumed)."""
-    flat = zigzag_scan(block)
+    if block.shape[0] == 1:
+        flat = block.flatten().tolist()
+    else:
+        flat = zigzag_scan(block)
+        flat = flat[1:]
     rle = []
     run = 0
-
+    size2 = len(flat)
+    # print(size2)
+    i = 0
     for value in flat:
-        if value == 0:
+        if value == 0 and i != size2-1:
             run += 1
         else:
             size = int(np.ceil(np.log2(abs(value) + 1)))
             rle.append((run, size, value))
+            # print(rle[len(rle)-1])
             run = 0
-
+        i = i+1
     return rle
 
 def zigzag_scan(block):
@@ -75,12 +82,14 @@ def huffman_encode_rle_with_global_codes(rle, codes):
     """
     encoded_rle = []
     for run, size, value in rle:
-        run_bits = f"{run:04b}"  # 4 bits for run
+        run_bits = f"{run:06b}"  # 4 bits for run
         value_code = codes[value]
-        size_bits = f"{len(value_code):04b}"  # 4 bits for size
+        size_bits = f"{len(value_code):06b}"  # 4 bits for size
+        # print(f'{run}, {len(value_code)}, {value_code}, {value}')
         # print(run_bits + size_bits + value_code)
         encoded_rle.append(run_bits + size_bits + value_code)
-
+        # binary_str = "".join(encoded_rle)
+        # byte_array = int(binary_str, 2).to_bytes((len(binary_str) + 7) // 8, byteorder='big')
     return "".join(encoded_rle)
 
 class HuffmanCoding:
@@ -151,3 +160,45 @@ class HuffmanCoding:
             # print(value)
             initial_run_length = run_length
         return decoded
+    
+    def encode_mapping(self):
+        """Encode the Huffman mapping into a binary string."""
+        binary_map = []
+        for symbol, code in self.codes.items():
+            symbol = int(symbol)  # Ensure symbol is an integer
+            # print(symbol)
+            if symbol < 0:
+                symbol_bin = f"{((1 << 12) + symbol):012b}"  # Two's complement for 9-bit
+            else:
+                symbol_bin = f"{symbol:012b}"  # Direct binary for non-negative values
+            # print(symbol)
+            length = len(code)
+            # print(length)
+            length_bin = f"{length:06b}"  # Length of the Huffman code (4 bits)
+            # print(code)
+            binary_map.append(symbol_bin + length_bin + code)
+        binary_str = "".join(binary_map)
+        
+        # byte_array = int(binary_str, 2).to_bytes((len(binary_str) + 7) // 8, byteorder='big')
+        return binary_str
+
+    @staticmethod
+    def decode_mapping(binary_map):
+        """Decode the binary representation of the Huffman mapping."""
+        index = 0
+        codes = {}
+        # binary_map = bin(int.from_bytes(byte_array, byteorder='big'))[2:].zfill(length)
+        while index + 18 < len(binary_map):
+            symbol = int(binary_map[index:index + 12], 2)
+            # print(symbol)
+            if symbol >= (1 << 11):  # Interpret as negative if the 9th bit is set
+                symbol -= (1 << 12)
+            # print(symbol)
+            length = int(binary_map[index + 12:index + 18], 2)
+            # print(length)
+            code = binary_map[index + 18:index + 18 + length]
+            # print(code)
+            codes[symbol] = code
+            # print(codes)
+            index += 18 + length
+        return codes
